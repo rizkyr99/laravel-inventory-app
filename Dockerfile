@@ -1,18 +1,39 @@
+# Dockerfile
+
+# Use official PHP image with Apache
 FROM php:8.3-fpm
+
+# Set working directory
+WORKDIR /var/www
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    git \
+    curl \
     libpng-dev \
-    libjpeg-dev \
+    libjpeg62-turbo-dev \
     libfreetype6-dev \
-    libzip-dev \
+    locales \
+    zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd \
-    && docker-php-ext-install zip \
-    && docker-php-ext-install pdo pdo_mysql
+    && docker-php-ext-install pdo_mysql gd
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www
+# Copy existing application directory contents
+COPY . .
+
+# Install PHP dependencies
+RUN composer install --optimize-autoloader --no-dev
+
+# Give proper permissions to storage folder
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Copy and set the environment file
+COPY .env.example .env
+RUN php artisan key:generate
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]
