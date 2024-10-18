@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -78,13 +77,32 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Product $product)
     {
-        //
+        $product->delete();
+
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully');
     }
 
     public function trashed()
     {
-        return view('products.index');
+        $products = Product::onlyTrashed()->get();
+        return view('product.trashed', compact('products'));
+    }
+
+    public function restore($id)
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+        return redirect()->route('products.trashed')
+            ->with('success', 'Product restored successfully');
+    }
+
+    public function forceDelete($id)
+    {
+        $barang = Product::withTrashed()->findOrFail($id);
+        $barang->forceDelete();
+        return redirect()->route('products.trashed')
+            ->with('success', 'Product permanently deleted');
     }
 }

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('category');
             $table->boolean('is_deleted')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
